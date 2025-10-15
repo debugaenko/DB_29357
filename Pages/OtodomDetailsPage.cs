@@ -1,0 +1,148 @@
+﻿//using Aquality.Selenium.Browsers;
+//using Aquality.Selenium.Core.Localization;
+using Aquality.Selenium.Core.Logging;
+using Aquality.Selenium.Elements.Interfaces;
+using DB_29357.Helpers;
+using OpenQA.Selenium;
+
+namespace DB_29357.Pages
+{
+    public class OtodomDetailsPage : BasePage
+    {
+        public OtodomDetailsPage() : base(OtodomSelectors.DetailsPage.PageIndicator, "Apartment Details Page") { }
+        private Dictionary<string, Func<ILabel>> ElementMapping => new Dictionary<string, Func<ILabel>>
+        {
+            { "detail_price", () => PriceValue },
+            { "detail_rooms", () => RoomsValue },
+            { "detail_surface", () => SurfaceValue }
+        };
+
+        private ILabel PriceValue => ElementFactory.GetLabel(By.XPath("//strong[@data-cy='adPageHeaderPrice']"), "Price Value");
+        private ILabel RoomsValue => ElementFactory.GetLabel(By.XPath("//div[@data-sentry-element='Item'][contains(text(),'Liczba pokoi')]/following-sibling::div[1]"), "Rooms Value");
+        private ILabel SurfaceValue => ElementFactory.GetLabel(By.XPath("//div[@data-sentry-element='Item'][contains(text(),'Powierzchnia')]/following-sibling::div[1]"), "Surface Value");
+
+        private Dictionary<string, string?> ExtractParams(List<string> keys)
+        {
+            Logger.Info($"[ExtractParams] Starting extraction for {keys.Count} parameters");
+            var results = new Dictionary<string, string?>();
+            foreach (var key in keys)
+            {
+                var extractedValue = ExtractSingleParameter(key);
+                results[key] = extractedValue;
+
+                LogExtractionResult(key, extractedValue);
+            }
+            Logger.Info($"[ExtractParams] Extraction completed: {results.Count(r => r.Value != null)}/{keys.Count} parameters found");
+            return results;
+        }
+
+        private string? ExtractSingleParameter(string key)
+        {
+            if (!ElementMapping.ContainsKey(key))
+            {
+                Logger.Warn($"[ExtractSingleParameter] Key '{key}' not found in element mapping");
+                return null;
+            }
+
+            var element = GetElementByKey(key);
+            if (element == null)
+            {
+                return null;
+            }
+            return GetElementTextSafely(element, key);
+        }
+
+        private ILabel? GetElementByKey(string key)
+        {
+            if (!ElementMapping.ContainsKey(key))
+            {
+                Logger.Warn($"[GetElementByKey] Key '{key}' not found in element mapping");
+                return null;
+            }
+            return ElementMapping[key]();
+        }
+
+        private string? GetElementTextSafely(ILabel element, string key)
+        {
+            if (!element.State.WaitForDisplayed())
+            {
+                Logger.Warn($"[GetElementTextSafely] Element '{key}' not displayed within timeout");
+                return null;
+            }
+
+            var text = element.GetText();
+
+            return string.IsNullOrWhiteSpace(text) ? null : text;
+        }
+
+        private void LogExtractionResult(string key, string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                Logger.Info($"[LogExtractionResult] Parameter '{key}' extraction failed or returned empty value");
+            }
+            else
+            {
+                Logger.Info($"[LogExtractionResult] Extracted parameter '{key}': {value}");
+            }
+        }
+
+        public string ExtractPriceFromDetails()
+        {
+            Logger.Info("[DETAILS_PAGE] [ExtractPriceFromDetails] Starting price extraction");
+
+            var results = ExtractParams(new List<string> { "detail_price" });
+            var price = results.GetValueOrDefault("detail_price", string.Empty);
+
+            if (!string.IsNullOrWhiteSpace(price))
+            {
+                Logger.Info($"[DETAILS_PAGE] [ExtractPriceFromDetails] Price successfully extracted: {price}");
+            }
+            else
+            {
+                Logger.Warn("[DETAILS_PAGE] [ExtractPriceFromDetails] No price found on details page");
+            }
+
+            return price ?? string.Empty;
+        }
+
+        public string ExtractRoomsFromDetails()
+        {
+            Logger.Info("[DETAILS_PAGE] [ExtractRoomsFromDetails] Starting rooms extraction");
+
+            var results = ExtractParams(new List<string> { "detail_rooms" });
+            var rooms = results.GetValueOrDefault("detail_rooms", string.Empty);
+
+            if (!string.IsNullOrWhiteSpace(rooms))
+            {
+                Logger.Info($"[DETAILS_PAGE] [ExtractRoomsFromDetails] Rooms successfully extracted: {rooms}");
+            }
+            else
+            {
+                Logger.Warn("[DETAILS_PAGE] [ExtractRoomsFromDetails] No rooms found on details page");
+            }
+
+            return rooms ?? string.Empty;
+        }
+
+        public Dictionary<string, string?> ExtractAllDetailsParameters()
+        {
+            Logger.Info("[DETAILS_PAGE] [ExtractAllDetailsParameters] Starting extraction of all parameters");
+
+            var allKeys = ElementMapping.Keys.ToList();
+            var results = ExtractParams(allKeys);
+
+            var successCount = results.Count(r => !string.IsNullOrWhiteSpace(r.Value));
+            Logger.Info($"[DETAILS_PAGE] [ExtractAllDetailsParameters] Extraction completed: {successCount}/{allKeys.Count} parameters found");
+
+            return results;
+        }
+
+        public class DetailsPageData
+        {
+            public int? Price { get; set; }
+            public int? Rooms { get; set; }
+            public double? Surface { get; set; }
+        }
+    }
+}

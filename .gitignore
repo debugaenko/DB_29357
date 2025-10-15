@@ -9,6 +9,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+*.feature.cs
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -361,3 +362,18 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Test artifacts and screenshots
+auth_error_*.png
+invalid_auth_error_*.png
+existing_email_wrong_password_error_*.png
+*_error_*.png
+
+# Test results and temporary files
+TestResults/
+test-results.xml
+test-output.xml
+
+# Security: Exclude settings.template.json with credentials
+Resources/setting.template.json
+settings.template.json
