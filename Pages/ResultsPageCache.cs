@@ -50,5 +50,11 @@ namespace DB_29357.Pages
 
             return _cachedListings;
         }
+
+        private static string ExtractBaseUrl(string url)
+        {
+            var uri = new Uri(url);
+            return $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}";
+        }
     }
 }
