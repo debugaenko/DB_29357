@@ -1,37 +1,40 @@
-using Aquality.Selenium.Core.Logging;
-using DB_29357.Helpers;
-using DB_29357.Pages;
+﻿using Aquality.Selenium.Core.Logging;
+using OtodomTests_29357.Models;
+using OtodomTests_29357.Pages;
 using FluentAssertions;
 using Reqnroll;
+using Aquality.Selenium.Browsers;
 
 public class OfferSelectionService
 {
-    private static readonly Logger Logger = Logger.Instance;
+    private static readonly Logger Logger = AqualityServices.Logger;
     private readonly ScenarioContext _scenarioContext;
     private readonly OtodomSearchResultsPage _resultsPage;
-    private readonly ListingDataCacheService _cacheService;
-
+    private readonly NavigationService _navigationService;
+    
+    private const string OfferContextKey = "SelectedOffer";
+    
     public OfferSelectionService(
         ScenarioContext scenarioContext,
         OtodomSearchResultsPage resultsPage,
-        ListingDataCacheService cacheService)
+        NavigationService navigationService)
     {
         _scenarioContext = scenarioContext;
         _resultsPage = resultsPage;
-        _cacheService = cacheService;
+        _navigationService = navigationService;
     }
 
     public void SelectAndSaveRandomOffer()
     {
         var apartmentCount = ValidateListingsExist();
-        var listingData = GetOrExtractListingData();
+        var listingData = _resultsPage.ExtractListingData();
         Logger.Debug($"Retrieved {listingData.Count} listing data entries");
         
         var selectedIndex = SelectRandomIndex(listingData.Count);
         var selectedData = ExtractSelectedOfferData(listingData, selectedIndex);
         
         SaveOfferToContext(selectedIndex, selectedData);
-        Logger.Info($"Offer #{selectedIndex + 1} selected: Price={FormatPrice(selectedData.price)}, Rooms={selectedData.rooms}, Surface={selectedData.surface:F1} m�");
+        Logger.Info($"Offer #{selectedIndex + 1} selected: Price={FormatPrice(selectedData.price)}, Rooms={selectedData.rooms}, Surface={selectedData.surface:F1} m²");
     }
 
     private int ValidateListingsExist()
@@ -46,9 +49,6 @@ public class OfferSelectionService
         var maxListings = Math.Min(count, 10);
         return Random.Shared.Next(0, maxListings);
     }
-
-    private List<(int? price, int? rooms, double? surface)> GetOrExtractListingData()
-        => _cacheService.GetOrExtract(() => _resultsPage.ExtractListingData(), "Search");
 
     private (int? price, int? rooms, double? surface) ExtractSelectedOfferData(
         List<(int? price, int? rooms, double? surface)> listingData, 
@@ -65,12 +65,31 @@ public class OfferSelectionService
 
     private void SaveOfferToContext(int index, (int? price, int? rooms, double? surface) data)
     {
-        _scenarioContext["SelectedListingIndex"] = index;
-        _scenarioContext["ListingCardPrice"] = data.price;
-        _scenarioContext["ListingCardRooms"] = data.rooms;
-        _scenarioContext["ListingCardSurface"] = data.surface;
+        var offerData = new OfferContextData
+        {
+            SelectedListingIndex = index,
+            Price = data.price,
+            Rooms = data.rooms,
+            Surface = data.surface
+        };
+        
+        _scenarioContext[OfferContextKey] = offerData;
+        Logger.Debug($"Saved offer to context: Index={index}, Price={data.price}, Rooms={data.rooms}, Surface={data.surface}");
     }
 
-    private string FormatPrice(int? price) 
-        => price.HasValue ? $"{price.Value:N0} PLN" : "null";
+    private string FormatPrice(int? price) => price.HasValue ? $"{price.Value:N0} PLN" : "null";
+
+    public void NavigateToSelectedOffer()
+    {
+        var offerData = _scenarioContext.Get<OfferContextData>(OfferContextKey);
+        var currentUrl = AqualityServices.Browser.CurrentUrl;
+
+        Logger.Debug($"Current URL before click: {currentUrl}");
+        _resultsPage.ClickListingByIndex(offerData.SelectedListingIndex);
+
+        _navigationService.WaitForDetailsPageToLoad();
+
+        _scenarioContext["OfferDetailsUrl"] = AqualityServices.Browser.CurrentUrl;
+        Logger.Info($"✓ Navigated to details page: {AqualityServices.Browser.CurrentUrl}");
+    }
 }

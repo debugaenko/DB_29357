@@ -1,12 +1,10 @@
-﻿using Aquality.Selenium.Core.Logging;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace DB_29357.Helpers
+namespace OtodomTests_29357.Helpers
 {
-    public static class Parsing
+    public static class ParsingHelper
     {
-        private static readonly Logger logger = Logger.Instance;
         
         public static int? ParsePriceToPln(string text, string callerContext = null)
         {

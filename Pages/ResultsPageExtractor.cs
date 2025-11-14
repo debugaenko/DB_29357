@@ -1,14 +1,11 @@
 ﻿using Aquality.Selenium.Elements.Interfaces;
-using Aquality.Selenium.Core.Localization;
 using OpenQA.Selenium;
 using System.Text.RegularExpressions;
 
-namespace DB_29357.Pages
+namespace OtodomTests_29357.Pages
 {
     public class ResultsPageExtractor
     {
-        private readonly ILocalizedLogger _logger;
-
         private static readonly Regex PriceRegex = new(@"(\d[\d\s\u00A0\.,]*)\s*(z.??|zl|pln)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
@@ -18,10 +15,6 @@ namespace DB_29357.Pages
         private static readonly Regex SurfaceRegex = new(@"(\d{1,3}(?:[.,]\d{1,2})?)\s*m[²2]",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        public ResultsPageExtractor(ILocalizedLogger logger)
-        {
-            _logger = logger;
-        }
 
         public string ExtractPriceFromCard(IElement card)
         {
@@ -38,12 +31,12 @@ namespace DB_29357.Pages
                 var priceElements = GetVisibleElements(card, selector);
                 foreach (var element in priceElements)
                 {
-                    var text = Clean(element.Text);
-                    if (!string.IsNullOrWhiteSpace(text) && PriceRegex.IsMatch(text))
-                    {
-                        return text;
-                    }
+                var text = Clean(element.Text);
+                if (!string.IsNullOrWhiteSpace(text) && PriceRegex.IsMatch(text))
+                {
+                    return text;
                 }
+            }
             }
 
             return string.Empty;
@@ -118,14 +111,6 @@ namespace DB_29357.Pages
             }
 
             return string.Empty;
-        }
-
-        private static bool IsInvalidPriceText(string text)
-        {
-            return string.IsNullOrEmpty(text)
-                || text.Contains("/m²")
-                || text.Contains("/m2")
-                || !Regex.IsMatch(text, @"\d");
         }
 
         private static bool ContainsSurfaceIndicator(string text)

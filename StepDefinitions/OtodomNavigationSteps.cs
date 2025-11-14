@@ -1,19 +1,15 @@
-﻿using Aquality.Selenium.Browsers;
-using Aquality.Selenium.Core.Logging;
-using DB_29357.Pages;
-using FluentAssertions;
+﻿using OtodomTests_29357.Pages;
 using NUnit.Framework;
 using OtodomTests.Support;
 using Reqnroll;
 
-namespace DB_29357.StepDefinitions
+namespace OtodomTests_29357.StepDefinitions
 {
     [Binding]
     [Category("BDD")]
     [Category("Navigation")]
     public class OtodomNavigationSteps
     {
-        private static readonly Logger _logger = AqualityServices.Logger;
         private readonly OtodomMainPage _mainPage;
         private readonly TestConfig _config;
         private readonly OtodomSearchSteps _otodomSearchSteps;

@@ -1,10 +1,9 @@
 ﻿using Aquality.Selenium.Forms;
 using Aquality.Selenium.Browsers;
 using Aquality.Selenium.Core.Logging;
-using Aquality.Selenium.Elements.Interfaces;
 using OpenQA.Selenium;
 
-namespace DB_29357.Pages
+namespace OtodomTests_29357.Pages
 {
     public abstract class BasePage : Form
     {

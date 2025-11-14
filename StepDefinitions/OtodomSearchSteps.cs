@@ -1,34 +1,28 @@
 ﻿using Aquality.Selenium.Core.Logging;
-using DB_29357.Helpers;
-using DB_29357.Pages;
+using Aquality.Selenium.Browsers;
+using OtodomTests_29357.Helpers;
+using OtodomTests_29357.Pages;
 using NUnit.Framework;
 using Reqnroll;
 
-namespace DB_29357.StepDefinitions
+namespace OtodomTests_29357.StepDefinitions
 {
     [Binding]
     [Category("BDD")]
     [Category("Search")]
     public class OtodomSearchSteps
     {
-        private static readonly Logger _logger = Logger.Instance;
-        private readonly ScenarioContext _scenarioContext;
+        private static readonly Logger _logger = AqualityServices.Logger;
         private readonly OtodomMainPage _mainPage;
-        private readonly OtodomSearchResultsPage _resultsPage;
-        private readonly ListingDataCacheService _cacheService;
         private readonly MainPageSearchActions _mainSearch;
         private readonly ResultsPageFilters _resultPageFilters;
 
         public OtodomSearchSteps(
-            ScenarioContext scenarioContext,
             OtodomMainPage mainPage,
-            OtodomSearchResultsPage resultsPage,
-            ListingDataCacheService cacheService, MainPageSearchActions mainSearch, ResultsPageFilters resultPageFilters)
+            MainPageSearchActions mainSearch,
+            ResultsPageFilters resultPageFilters)
         {
-            _scenarioContext = scenarioContext;
             _mainPage = mainPage;
-            _resultsPage = resultsPage;
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
             _mainSearch = mainSearch ?? throw new ArgumentNullException(nameof(mainSearch));
             _resultPageFilters = resultPageFilters ?? throw new ArgumentNullException(nameof(resultPageFilters));
         }
@@ -69,7 +63,7 @@ namespace DB_29357.StepDefinitions
 
             foreach (var offer in offers)
             {
-                var price = Parsing.ParsePriceToPln(offer.Price);
+                var price = ParsingHelper.ParsePriceToPln(offer.Price);
 
                 if (price.HasValue)
                 {

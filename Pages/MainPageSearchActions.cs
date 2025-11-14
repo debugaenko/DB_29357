@@ -1,14 +1,13 @@
-﻿//using Aquality.Selenium.Browsers;
+using Aquality.Selenium.Browsers;
 using Aquality.Selenium.Core.Logging;
-//using Aquality.Selenium.Core.Waitings;
 using Aquality.Selenium.Elements.Interfaces;
 using OpenQA.Selenium;
 
-namespace DB_29357.Pages
+namespace OtodomTests_29357.Pages
 {
     public class MainPageSearchActions
     {
-        private readonly Logger _logger;
+        private readonly Logger _logger = AqualityServices.Logger;
         private readonly IElementFactory _elementFactory;
 
         private ITextBox LocationButton => _elementFactory.GetTextBox(By.CssSelector("input[data-cy='search.form.location.button']"), "Location Button");
@@ -20,7 +19,6 @@ namespace DB_29357.Pages
         private ILabel FirstDropdownSuggestion => _elementFactory.GetLabel(By.XPath("//div[@data-sentry-source-file='SuggestionRow.tsx'][1]"), "First Dropdown Suggestion");
         public MainPageSearchActions(OtodomMainPage mainPage, IElementFactory elementFactory)
         {
-            _logger = Logger.Instance;
             _elementFactory = elementFactory ?? throw new ArgumentNullException(nameof(elementFactory));
         }
 
@@ -95,7 +93,7 @@ namespace DB_29357.Pages
         private void SetPriceFilters(decimal minPrice, decimal maxPrice)
         {
             if (PriceMinInput.State.WaitForDisplayed())
-            { //TimeSpan.FromSeconds(3)
+            { 
                 PriceMinInput.State.WaitForClickable();
                 PriceMinInput.Click();
                 PriceMinInput.ClearAndType(((long)minPrice).ToString());
@@ -103,7 +101,7 @@ namespace DB_29357.Pages
             }
 
             if (PriceMaxInput.State.WaitForDisplayed())
-            { // TimeSpan.FromSeconds(5)
+            { 
                 PriceMaxInput.State.WaitForClickable();
                 PriceMaxInput.Click();
                 PriceMaxInput.ClearAndType(((long)maxPrice).ToString());

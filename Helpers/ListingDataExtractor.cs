@@ -1,11 +1,12 @@
 ﻿using Aquality.Selenium.Core.Logging;
 using Aquality.Selenium.Elements.Interfaces;
+using Aquality.Selenium.Browsers;
 
-namespace DB_29357.Helpers
+namespace OtodomTests_29357.Helpers
 {
     public class ListingDataExtractor
     {
-        private readonly Logger _logger = Logger.Instance;
+        private readonly Logger _logger = AqualityServices.Logger;
 
         public List<ListingData> ExtractBatch(IList<ILabel> listings, Func<ILabel, ILabel?>? getSurfaceElement = null, int maxListings = 36)
         {
@@ -34,7 +35,7 @@ namespace DB_29357.Helpers
         private List<ILabel> WaitForListingsBatch(IList<ILabel> listings, int count)
         {
             var targetCount = Math.Min(count, listings.Count);
-
+            
             if (targetCount == 0)
                 return new List<ILabel>();
             
@@ -56,8 +57,8 @@ namespace DB_29357.Helpers
             }
             var listingData = new ListingData
             {
-                Price = Parsing.ParsePriceToPln(text),
-                Rooms = Parsing.ParseRooms(text),
+                Price = ParsingHelper.ParsePriceToPln(text),
+                Rooms = ParsingHelper.ParseRooms(text),
                 Surface = ExtractSurface(listing, getSurfaceElement, text)
             };
             return listingData;
@@ -72,7 +73,7 @@ namespace DB_29357.Helpers
                 if (surfaceElement?.State.IsDisplayed == true)
                 {
                     var surfaceText = surfaceElement.GetText();
-                    var surface = Parsing.ParseSurfaceM2(surfaceText);
+                    var surface = ParsingHelper.ParseSurfaceM2(surfaceText);
 
                     if (surface.HasValue)
                     {
@@ -80,7 +81,7 @@ namespace DB_29357.Helpers
                     }
                 }
             }
-            return Parsing.ParseSurfaceM2(fallbackText);
+            return ParsingHelper.ParseSurfaceM2(fallbackText);
         }
 
         public class ListingData

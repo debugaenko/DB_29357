@@ -1,15 +1,33 @@
-﻿//using Aquality.Selenium.Browsers;
-//using Aquality.Selenium.Core.Localization;
-using Aquality.Selenium.Core.Logging;
+﻿using Aquality.Selenium.Core.Logging;
 using Aquality.Selenium.Elements.Interfaces;
-using DB_29357.Helpers;
 using OpenQA.Selenium;
 
-namespace DB_29357.Pages
+namespace OtodomTests_29357.Pages
 {
     public class OtodomDetailsPage : BasePage
     {
-        public OtodomDetailsPage() : base(OtodomSelectors.DetailsPage.PageIndicator, "Apartment Details Page") { }
+        private static readonly By PriceSelector = By.XPath("//strong[@data-cy='adPageHeaderPrice']");
+        private static readonly By[] RoomSelectors = new[]
+        {
+            By.XPath("//div[@data-sentry-element='Item'][contains(text(),'Liczba pokoi')]/following-sibling::div[@data-sentry-element='Item']"),
+            By.XPath("//div[@data-sentry-element='Item'][contains(text(),'Liczba pokoi')]/following-sibling::div[1]"),
+            By.XPath("//dt[contains(text(),'Liczba pokoi')]/following-sibling::dd[1]")
+        };
+        private static readonly By[] SurfaceSelectors = new[]
+        {
+            By.XPath("//div[@data-sentry-element='Item'][contains(text(),'Powierzchnia')]/following-sibling::div[@data-sentry-element='Item']"),
+            By.XPath("//div[@data-sentry-element='Item'][contains(text(),'Powierzchnia')]/following-sibling::div[1]"),
+            By.XPath("//dt[contains(text(),'Powierzchnia')]/following-sibling::dd[1]")
+        };
+
+        private ILabel PriceValue => ElementFactory.GetLabel(PriceSelector, "Price Value");
+        private ILabel RoomsValue => GetElementWithFallback(RoomSelectors, "Rooms Value");
+        private ILabel SurfaceValue => GetElementWithFallback(SurfaceSelectors, "Surface Value");
+
+        public OtodomDetailsPage() : base(PriceSelector, "Apartment Details Page")
+        {
+        }
+
         private Dictionary<string, Func<ILabel>> ElementMapping => new Dictionary<string, Func<ILabel>>
         {
             { "detail_price", () => PriceValue },
@@ -17,9 +35,29 @@ namespace DB_29357.Pages
             { "detail_surface", () => SurfaceValue }
         };
 
-        private ILabel PriceValue => ElementFactory.GetLabel(By.XPath("//strong[@data-cy='adPageHeaderPrice']"), "Price Value");
-        private ILabel RoomsValue => ElementFactory.GetLabel(By.XPath("//div[@data-sentry-element='Item'][contains(text(),'Liczba pokoi')]/following-sibling::div[1]"), "Rooms Value");
-        private ILabel SurfaceValue => ElementFactory.GetLabel(By.XPath("//div[@data-sentry-element='Item'][contains(text(),'Powierzchnia')]/following-sibling::div[1]"), "Surface Value");
+        private ILabel GetElementWithFallback(By[] selectors, string name)
+        {
+            foreach (var selector in selectors)
+            {
+                try
+                {
+                    var element = ElementFactory.GetLabel(selector, name);
+                    if (element.State.IsExist)
+                    {
+                        Logger.Debug($"Found element '{name}' using selector: {selector}");
+                        return element;
+                    }
+                }
+                catch
+                {
+                    Logger.Debug($"Selector failed for '{name}': {selector}");
+                    continue;
+                }
+            }
+            
+            Logger.Warn($"All selectors failed for '{name}', using primary selector");
+            return ElementFactory.GetLabel(selectors[0], name);
+        }
 
         private Dictionary<string, string?> ExtractParams(List<string> keys)
         {
@@ -136,13 +174,6 @@ namespace DB_29357.Pages
             Logger.Info($"[DETAILS_PAGE] [ExtractAllDetailsParameters] Extraction completed: {successCount}/{allKeys.Count} parameters found");
 
             return results;
-        }
-
-        public class DetailsPageData
-        {
-            public int? Price { get; set; }
-            public int? Rooms { get; set; }
-            public double? Surface { get; set; }
         }
     }
 }

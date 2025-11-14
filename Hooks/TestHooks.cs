@@ -1,14 +1,14 @@
 using Aquality.Selenium.Browsers;
-using NUnit.Framework;
 using Reqnroll;
 using Aquality.Selenium.Core.Logging;
 
-namespace DB_29357.Hooks
+namespace OtodomTests_29357.Hooks
 {
     [Binding]
     public class TestHooks
     {
-        private static readonly Logger Logger = Logger.Instance;
+        private static readonly Logger Logger = AqualityServices.Logger;
+        private Browser _browser;
 
         [BeforeTestRun]
         public static void BeforeTestRun()
@@ -26,7 +26,10 @@ namespace DB_29357.Hooks
         public void BeforeScenario(ScenarioContext scenarioContext)
         {
             Logger.Info($"=== Scenario: {scenarioContext.ScenarioInfo.Title} ===");
+            _browser = AqualityServices.Browser;
+            _browser.Maximize();
         }
+
 
         [AfterScenario]
         public void AfterScenario(ScenarioContext scenarioContext)

@@ -1,32 +1,43 @@
 ﻿using Aquality.Selenium.Browsers;
 using Aquality.Selenium.Core.Logging;
 using Aquality.Selenium.Elements.Interfaces;
-//using Aquality.Selenium.Core.Applications;
-//using DB_29357.Helpers;
-//using FluentAssertions.Specialized;
-//using Io.Cucumber.Messages.Types;
 using OpenQA.Selenium;
 using OtodomTests.Support;
 
-namespace DB_29357.Pages
+namespace OtodomTests_29357.Pages
 {
     public class OtodomMainPage : BasePage
     {
         private readonly Logger _logger = AqualityServices.Logger;
-        private readonly MainPageLoginActions _mainPageLoginActions;
         private readonly TestConfig _config;
-        
+
         public int PriceMin { get; set; }
         public int PriceMax { get; set; }
 
-        private IButton CookieAcceptButton => ElementFactory.GetButton(By.CssSelector("#onetrust-accept-btn-handler, button[id*='accept'], button[id*='consent']"), "Cookie Accept Button");
+        private IButton CookieAcceptButton => ElementFactory.GetButton(
+            By.CssSelector("#onetrust-accept-btn-handler, button[id*='accept'], button[id*='consent']"),
+            "Cookie Accept Button");
 
-        private IButton MojeKontoButton => ElementFactory.GetButton(By.XPath("//button[@data-cy='navbar-my-account-button']"), "Moje Konto Button");
+        private IButton MojeKontoButton => ElementFactory.GetButton(
+            By.XPath("//button[@data-cy='navbar-my-account-button']"),
+            "Moje Konto Button");
 
-        public OtodomMainPage(TestConfig testConfig, MainPageLoginActions mainPageLoginActions) : base(By.XPath("//input[contains(@class, 'n-textinput-input')]"), "Main Page")
+        private ITextBox EmailInput => ElementFactory.GetTextBox(
+            By.CssSelector("#username, input#username[name='username'][type='email']"),
+            "Email Input");
+
+        private ITextBox PasswordInput => ElementFactory.GetTextBox(
+            By.CssSelector("#password, input#password[name='password'][type='password']"),
+            "Password Input");
+
+        private IButton LoginSubmitButton => ElementFactory.GetButton(
+            By.CssSelector("button#Login[data-testid='login-submit-button'], button[data-testid='login-submit-button']"),
+            "Login Button");
+
+        public OtodomMainPage(TestConfig testConfig)
+            : base(By.XPath("//input[contains(@class, 'n-textinput-input')]"), "Main Page")
         {
             _config = testConfig ?? throw new ArgumentNullException(nameof(testConfig));
-            _mainPageLoginActions = new MainPageLoginActions(_config);
         }
 
         public void GivenIOpenTheOtodomMainPageAndVerifyItLoadsCorrectly()
@@ -50,7 +61,6 @@ namespace DB_29357.Pages
         private void NavigateToStartUrl()
         {
             var browser = AqualityServices.Browser;
-            browser.Maximize();
 
             if (!browser.CurrentUrl.StartsWith(_config.StartUrl, StringComparison.OrdinalIgnoreCase))
             {
@@ -61,28 +71,64 @@ namespace DB_29357.Pages
 
         public bool WhenIPassThroughTheAuthorizationProcessWithValidCredentials(string? email = null, string? password = null)
         {
-            var Email = Environment.GetEnvironmentVariable("OTODOM_TEST_EMAIL") ?? _config.Email;
-            var Password = Environment.GetEnvironmentVariable("OTODOM_TEST_PASSWORD") ?? _config.Password;
+            var Email = email ?? _config.Email;
+            var Password = password ?? _config.Password;
 
             _logger.Info("[WhenIPassThroughTheAuthorizationProcessWithValidCredentials] User authorization process");
             MojeKontoButton.Click();
             _logger.Info($"[WhenIPassThroughTheAuthorizationProcessWithValidCredentials] Email used for login: {Email}");
+
             if (string.IsNullOrEmpty(Email) || string.IsNullOrEmpty(Password))
             {
                 _logger.Warn("[WhenIPassThroughTheAuthorizationProcessWithValidCredentials] Test credentials not configured - continuing with anonymous session");
                 return false;
             }
 
-            _mainPageLoginActions.FillLoginForm(email, password);
-            _mainPageLoginActions.SubmitLoginForm();
+            FillLoginForm(Email, Password);
+            SubmitLoginForm();
             _logger.Info("[WhenIPassThroughTheAuthorizationProcessWithValidCredentials] Authorization process completed");
             return true;
+        }
+
+        private bool FillLoginForm(string email, string password)
+        {
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            {
+                throw new InvalidOperationException("[FillLoginForm] Login credentials are not configured in TestConfig or environment variables.");
+            }
+
+            _logger.Info("[FillLoginForm] Filling login credentials");
+
+            if (!EmailInput.State.WaitForDisplayed())
+            {
+                _logger.Warn("[FillLoginForm] Email input not found");
+                throw new InvalidOperationException("[FillLoginForm] Email input not found on login form.");
+            }
+
+            EmailInput.ClearAndType(email);
+            PasswordInput.ClearAndType(password);
+
+            _logger.Info($"[FillLoginForm] Credentials entered (email: {email}, password length: {password.Length})");
+            return true;
+        }
+
+        private void SubmitLoginForm()
+        {
+            _logger.Info("[SubmitLoginForm] Submitting login form");
+
+            if (!LoginSubmitButton.State.IsDisplayed || !LoginSubmitButton.State.IsClickable)
+            {
+                _logger.Warn("[SubmitLoginForm] Submit button is not clickable");
+                return;
+            }
+
+            LoginSubmitButton.Click();
+            EmailInput.State.WaitForNotDisplayed();
         }
 
         public void ThenIVerifyTheUserIsAuthorizedAndMainPageIsOpened()
         {
             _logger.Info("[ThenIVerifyTheUserIsAuthorizedAndMainPageIsOpened] Start user authorization verification");
-
             VerifyAuthorization();
         }
 
@@ -97,12 +143,13 @@ namespace DB_29357.Pages
 
             _logger.Debug("[AcceptCookies] No cookie consent buttons found");
         }
+
         public void VerifyAuthorization()
         {
             var browser = AqualityServices.Browser;
             browser.WaitForPageToLoad();
             var isButtonVisible = MojeKontoButton.State.WaitForDisplayed();
-            //TimeSpan.FromSeconds(5)
+
             if (isButtonVisible && MojeKontoButton.State.IsEnabled)
             {
                 _logger.Error("[VerifyAuthorization] Moje konto button is displayed");
